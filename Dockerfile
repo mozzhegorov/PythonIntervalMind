@@ -5,12 +5,14 @@ WORKDIR /home
 ENV TZ=Europe/Moscow
 
 #RUN apt-get update
-#RUN pip install --upgrade pip
 #COPY requirements.txt .
 # RUN pip install -r requirements.txt
 
 COPY *.py ./
 RUN touch ./db/database.db
+
+RUN python -m pip install --upgrade pip
+
 RUN pip install aiogram==2.24
 RUN pip install aiohttp==3.8.3
 RUN pip install aiosignal==1.3.1
