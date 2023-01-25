@@ -1,16 +1,16 @@
-FROM arm32v7/python:3.8-buster
+FROM python:3.10-buster
 
 WORKDIR /home
 
 ENV TZ=Europe/Moscow
 
-RUN apt-get update
-RUN pip install --upgrade pip
-COPY requirements.txt .
+#RUN apt-get update
+#RUN pip install --upgrade pip
+#COPY requirements.txt .
 # RUN pip install -r requirements.txt
 
 COPY *.py ./
-RUN touch db/database.db
+RUN touch ./db/database.db
 RUN pip install aiogram==2.24
 RUN pip install aiohttp==3.8.3
 RUN pip install aiosignal==1.3.1
