@@ -10,7 +10,6 @@ COPY requirements.txt .
 # RUN pip install -r requirements.txt
 
 COPY *.py ./
-COPY *.env ./
 RUN touch db/database.db
 RUN pip install aiogram==2.24
 RUN pip install aiohttp==3.8.3
