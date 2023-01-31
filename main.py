@@ -9,7 +9,6 @@ from utils import get_topic_from_db
 from utils import get_data_question
 
 
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 

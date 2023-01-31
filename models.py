@@ -97,8 +97,8 @@ def import_from_csv(filename):
         for item in reader[1:]:
             question_from_csv = item[0]
             topic_from_csv = item[1]
-            answers_from_csv = item[2:5]
-            hint_from_csv = item[6]
+            answers_from_csv = item[2:6]
+            hint_from_csv = item[7]
             new_topic = get_or_create(Topic, name=topic_from_csv)[0]
             new_question, created = get_or_create(Question, text=question_from_csv, topic_id=new_topic.id)
             if created:
