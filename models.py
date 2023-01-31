@@ -105,7 +105,7 @@ def import_from_csv(filename):
                 session.add(new_question)
                 session.commit()
                 answers = [Answer(correct=False, text=answer, question_id=new_question.id) 
-                            for answer in answers_from_csv]
+                            for answer in answers_from_csv if answer]
                 answers[0].correct = True
                 session.bulk_save_objects(answers)
                 session.commit()
