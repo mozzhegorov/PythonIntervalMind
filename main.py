@@ -9,7 +9,6 @@ from utils import get_topic_from_db
 from utils import get_data_question
 
 
-API_TOKEN = API_TOKEN
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-@dp.message_handler(commands=['вопрос', 'question'])
+@dp.message_handler(commands=['question', ])
 async def send_welcome(message: types.Message):
     """"""
     data_for_quiz = get_data_question()
