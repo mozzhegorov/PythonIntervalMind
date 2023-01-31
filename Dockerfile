@@ -8,9 +8,6 @@ ENV TZ=Europe/Moscow
 #COPY requirements.txt .
 # RUN pip install -r requirements.txt
 
-COPY *.py ./
-RUN touch ./db/database.db
-
 RUN python -m pip install --upgrade pip
 
 RUN pip install aiogram==2.24
@@ -35,4 +32,9 @@ RUN pip install pytz==2022.7.1
 RUN pip install SQLAlchemy==1.4.46
 RUN pip install yarl==1.8.2
 RUN pip install zipp==3.11.0
+
+COPY *.py ./
+COPY *.env ./
+RUN touch ./database.db
+
 CMD [ "python", "main.py" ]
