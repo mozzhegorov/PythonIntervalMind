@@ -112,7 +112,6 @@ def delete_poll(poll_id: int):
 
 
 def save_statistic(quiz_answer_data, quiz_anwser):
-    topic = get_topic_from_db(quiz_answer_data.topic)
     question = session.query(Question).filter_by(
         text=quiz_answer_data.question,
     ).first()
@@ -122,7 +121,7 @@ def save_statistic(quiz_answer_data, quiz_anwser):
         Statictic,
         user_full_name=full_name,
         question_id=question.id,
-        topic_id=topic.id,
+        topic_id=question.topic.id,
     )
     statistic_item.correct_cnt += 1 if answer_result else (-1)
     session.commit()
