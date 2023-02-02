@@ -1,7 +1,7 @@
 import configparser
 
 config = configparser.ConfigParser()
-config.read('/home/.env')
+config.read('.env')
 
 general_env = config["General"]
 
