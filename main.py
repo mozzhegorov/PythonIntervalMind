@@ -1,8 +1,7 @@
-
 from aiogram import Bot, Dispatcher, executor, types
 import logging
 from models import Poll, Topic, Question, Answer
-from  sqlalchemy.sql.expression import func
+from sqlalchemy.sql.expression import func
 from settings import API_TOKEN
 from engine import session
 from utils import get_topic_from_db
@@ -13,7 +12,7 @@ from utils import save_poll
 from utils import get_poll_data
 from utils import delete_poll
 from utils import save_statistic
-
+from utils import get_statistic_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -61,8 +60,7 @@ async def handle_poll_answer(quiz_answer):
     else:
         data_for_quiz = get_data_question(topic)
     delete_poll(quiz_answer['poll_id'])
-    
-        
+
     # my_quiz = await bot.send_poll(
     #     quiz_answer.user.id, 
     #     data_for_quiz['question'].text, 
@@ -77,33 +75,37 @@ async def handle_poll_answer(quiz_answer):
     #     my_quiz['poll']['question'],
     #     topic,
     # )
-    
-    
+
+
 @dp.message_handler(commands=['initbase', ])
 async def init_base(message: types.Message):
     """"""
     message_text = message.text[1:]
     topic_in_database = get_topic_from_db(message_text)
     create_all()
-    import_from_csv('db/1.csv')
+    all_questions, imported_questions = import_from_csv('db/1.csv')
     if not topic_in_database:
         await bot.send_message(
-            message.chat.id, 
-            'База данных обновлена', 
+            message.chat.id,
+            'База данных обновлена \n'
+            f'Из файла прочитано {all_questions} \n'
+            f'Импортировано {imported_questions}',
         )
+
 
 @dp.message_handler(commands=['statistic', ])
 async def get_statistic(message: types.Message):
     """"""
-    message_text = message.text[1:]
-    topic_in_database = get_statistic_data(message_text)
-    if not topic_in_database:
-        await bot.send_message(
-            message.chat.id,
-            'База данных обновлена',
-        )
-    
-    
+    user_statistic = get_statistic_data(message)
+    msg = f'Ваша статистика: \n' \
+          f'{user_statistic}' \
+          f''
+    await bot.send_message(
+        message.chat.id,
+        msg,
+    )
+
+
 @dp.message_handler()
 async def add_receipt(message: types.Message):
     """"""
@@ -111,8 +113,8 @@ async def add_receipt(message: types.Message):
     topic_in_database = get_topic_from_db(message_text)
     if not topic_in_database:
         await bot.send_message(
-            message.chat.id, 
-            'Неверная команда', 
+            message.chat.id,
+            'Неверная команда',
         )
     else:
         user_name = f'{message.chat.first_name} {message.chat.last_name}'
@@ -121,11 +123,10 @@ async def add_receipt(message: types.Message):
             await send_quiz(message, data_for_quiz)
         else:
             await bot.send_message(
-                message.chat.id, 
-                'Эта тема полностью пройдена', 
+                message.chat.id,
+                'Эта тема полностью пройдена',
             )
-    
-    
-    
+
+
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)

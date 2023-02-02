@@ -13,15 +13,15 @@ from engine import engine
 
 
 def get_data_question(
-    topic_text: Union[str, None] = None, 
-    user_name: Union[str, None] = None,
-    ) -> Union[dict, None]:
+        topic_text: Union[str, None] = None,
+        user_name: Union[str, None] = None,
+) -> Union[dict, None]:
     question_query = session.query(Question).join(Topic)
     if topic_text:
-        question_query = question_query.filter(Topic.name==topic_text)
+        question_query = question_query.filter(Topic.name == topic_text)
     exclude_questions = session.query(Statictic).filter(
-        Statictic.user_full_name==user_name, 
-        Statictic.correct_cnt>2,
+        Statictic.user_full_name == user_name,
+        Statictic.correct_cnt > 2,
     ).all()
     exit_questions = [question.question_id for question in exclude_questions]
     question_query = question_query.filter(~Question.id.in_(exit_questions))
@@ -29,30 +29,29 @@ def get_data_question(
     if not random_question:
         return None
     all_answers = session.query(Answer).filter(
-        Answer.question_id==random_question.id,
+        Answer.question_id == random_question.id,
     )
     answers = [answer.text for answer in all_answers.all()]
     correct_answer = all_answers.filter(
-        Answer.correct==True,
-        ).first()
+        Answer.correct,
+    ).first()
     shuffle(answers)
     correct_answer_id = answers.index(correct_answer.text)
     return {
         'question': random_question,
         'answers': answers,
-        'correct_answer_id': correct_answer_id, 
-        'correct_answer_id': correct_answer_id, 
+        'correct_answer_id': correct_answer_id,
     }
-    
-    
-def get_topic_from_db(topic_text: str) -> Union[Topic, None]:
-    return session.query(Topic).filter(Topic.name==topic_text).first()
 
+
+def get_topic_from_db(topic_text: str) -> Union[Topic, None]:
+    return session.query(Topic).filter(Topic.name == topic_text).first()
 
 
 def create_all():
     Base.metadata.create_all(engine)
-    
+
+
 def get_or_create(model, **kwargs):
     """SqlAlchemy implementation of Django's get_or_create.
     """
@@ -65,6 +64,7 @@ def get_or_create(model, **kwargs):
         session.commit()
         return instance, True
 
+
 def import_from_csv(filename):
     with open(file=filename, mode='r') as file:
         reader = list(csv.reader(file))
@@ -76,7 +76,6 @@ def import_from_csv(filename):
                 continue
             topic_from_csv = item[1]
             answers_from_csv = item[2:6]
-            hint_from_csv = item[6]
             all_questions += 1
             new_topic = get_or_create(Topic, name=topic_from_csv)[0]
             new_question, created = get_or_create(Question, text=question_from_csv, topic_id=new_topic.id)
@@ -84,44 +83,76 @@ def import_from_csv(filename):
                 added_questions += 1
                 session.add(new_question)
                 session.commit()
-                answers = [Answer(correct=False, text=answer, question_id=new_question.id) 
-                            for answer in answers_from_csv if answer]
+                answers = [Answer(correct=False, text=answer, question_id=new_question.id)
+                           for answer in answers_from_csv if answer]
                 answers[0].correct = True
                 session.bulk_save_objects(answers)
                 session.commit()
-                
+    return all_questions, added_questions
+
+
 def save_poll(poll_id, correct_answer, question, topic):
     new_poll = Poll(
-        id=poll_id, 
-        correct_answer=correct_answer, 
+        id=poll_id,
+        correct_answer=correct_answer,
         question=question,
         topic=topic,
     )
     session.add(new_poll)
     session.commit()
-    
+
+
 def get_poll_data(poll_id: int) -> Union[Poll, None]:
-    return session.query(Poll).filter(Poll.id==poll_id).first()
-    
-def delete_poll(poll_id: int) -> Union[Poll, None]:
-    session.query(Poll).filter(Poll.id==poll_id).delete()
+    return session.query(Poll).filter(Poll.id == poll_id).first()
+
+
+def delete_poll(poll_id: int):
+    session.query(Poll).filter(Poll.id == poll_id).delete()
     session.commit()
-    
+
+
 def save_statistic(quiz_answer_data, quiz_anwser):
     topic = get_topic_from_db(quiz_answer_data.topic)
     question = session.query(Question).filter_by(
-            text=quiz_answer_data.question,
-        ).first()
+        text=quiz_answer_data.question,
+    ).first()
     answer_result = quiz_answer_data.correct_answer in quiz_anwser['option_ids']
     full_name = f'{quiz_anwser["user"]["first_name"]} {quiz_anwser["user"]["last_name"]}'
     statistic_item, created = get_or_create(
-        Statictic, 
-        user_full_name=full_name, 
+        Statictic,
+        user_full_name=full_name,
         question_id=question.id,
         topic_id=topic.id,
     )
-    statistic_item.correct_cnt += 1 if answer_result else (-1)   
+    statistic_item.correct_cnt += 1 if answer_result else (-1)
     session.commit()
-    print(session.query(Statictic).all())
-    
-    print(quiz_answer_data, quiz_anwser)
+
+
+def get_statistic_data(message):
+    user_name = f'{message.chat.first_name} {message.chat.last_name}'
+    all_questions = dict(
+        session.query(
+            Topic.name,
+            func.count(Question.topic_id),
+        ).join(
+            Topic
+        ).group_by(
+            Topic
+        ).all()
+    )
+
+    user_stata = dict(
+        session.query(
+            Topic.name,
+            func.sum(Statictic.correct_cnt),
+        ).join(
+            Topic
+        ).group_by(
+            Topic
+        ).filter(Statictic.user_full_name == user_name).all()
+    )
+    result_stata = '\n'.join(
+        [f'/{key}:: {value} / {all_questions[key] * 2}'
+         for key, value in user_stata.items()]
+    )
+    return result_stata
