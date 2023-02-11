@@ -4,7 +4,7 @@ from models import Poll, Topic, Question, Answer
 from sqlalchemy.sql.expression import func
 from settings import API_TOKEN
 from engine import session
-from utils import get_topic_from_db
+from utils import get_topic_from_db, clear_statistic
 from utils import get_data_question
 from utils import create_all
 from utils import import_from_csv
@@ -23,11 +23,13 @@ dp = Dispatcher(bot)
 
 
 async def send_quiz(message, quiz_data):
+    questions_data = quiz_data["question"]
+    question_text = f'{questions_data.id}. {questions_data.text} \n' \
+                    f' #{questions_data.topic.name}'
     my_quiz = await bot.send_poll(
         chat_id=message.chat.id,
-        question=quiz_data['question'].text,
+        question=question_text,
         options=quiz_data['answers'],
-        # options=option_data,
         type='quiz',
         correct_option_id=quiz_data['correct_answer_id'],
         is_anonymous=False,
@@ -36,8 +38,27 @@ async def send_quiz(message, quiz_data):
     save_poll(
         my_quiz['poll']['id'],
         my_quiz['poll']['correct_option_id'],
-        my_quiz['poll']['question'],
+        questions_data.text,
         message_text,
+    )
+
+
+@dp.message_handler(commands=['start', ])
+async def send_welcome(message: types.Message):
+    """"""
+    msg = f'Привет, {message.chat.first_name} {message.chat.last_name}!\n' \
+          f'Добро пожаловать в бота MindPyStorm :) \n\n' \
+          f'Если ты здесь, значит ты хочешь проверить свои знания по разным темам, будь то ' \
+          f'/python или /linux, /docker или /OOP .\n\n' \
+          f'Свою статистику можешь глянуть тут же /statistic \n' \
+          f'Если ты правильно 3 раза ответил на вопрос, то вопрос больше не будет тебе попадаться \n' \
+          f'Так и считает статистика. Закрытая тема = 3 правильных ответа на каждый вопрос. ' \
+          f'За неверный ответ минус бал. \n\n' \
+          f'В принципе всё просто и понятно. \n' \
+          f'Успехов! :)'
+    await bot.send_message(
+        message.chat.id,
+        msg,
     )
 
 
@@ -45,6 +66,9 @@ async def send_quiz(message, quiz_data):
 async def send_welcome(message: types.Message):
     """"""
     data_for_quiz = get_data_question()
+    if False:
+        picture = open("pic.png", 'rb')
+        await bot.send_photo(message.chat.id, picture)
     await send_quiz(message, data_for_quiz)
 
 
@@ -100,6 +124,17 @@ async def get_statistic(message: types.Message):
     msg = f'Ваша статистика: \n' \
           f'{user_statistic}' \
           f''
+    await bot.send_message(
+        message.chat.id,
+        msg,
+    )
+
+
+@dp.message_handler(commands=['clearstat', ])
+async def get_statistic(message: types.Message):
+    """"""
+    clear_statistic(message)
+    msg = f'Ваша статистика очищена'
     await bot.send_message(
         message.chat.id,
         msg,

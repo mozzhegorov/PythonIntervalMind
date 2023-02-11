@@ -12,10 +12,7 @@ from engine import Base
 from engine import engine
 
 
-def get_data_question(
-        topic_text: Union[str, None] = None,
-        user_name: Union[str, None] = None,
-) -> Union[dict, None]:
+def get_question(topic_text: Union[str, None], user_name: Union[str, None]):
     question_query = session.query(Question).join(Topic)
     if topic_text:
         question_query = question_query.filter(Topic.name == topic_text)
@@ -25,20 +22,31 @@ def get_data_question(
     ).all()
     exit_questions = [question.question_id for question in exclude_questions]
     question_query = question_query.filter(~Question.id.in_(exit_questions))
-    random_question = question_query.order_by(func.random()).first()
-    if not random_question:
-        return None
+    return question_query.order_by(func.random()).first()
+
+
+def get_answer(question: 'Question'):
     all_answers = session.query(Answer).filter(
-        Answer.question_id == random_question.id,
+        Answer.question_id == question.id,
     )
     answers = [answer.text for answer in all_answers.all()]
     correct_answer = all_answers.filter(
-        Answer.correct,
+        Answer.correct==True
     ).first()
     shuffle(answers)
-    correct_answer_id = answers.index(correct_answer.text)
+    return answers, answers.index(correct_answer.text)
+
+
+def get_data_question(
+        topic_text: Union[str, None] = None,
+        user_name: Union[str, None] = None,
+) -> Union[dict, None]:
+    question = get_question(topic_text, user_name)
+    if not question:
+        return None
+    answers, correct_answer_id = get_answer(question)
     return {
-        'question': random_question,
+        'question': question,
         'answers': answers,
         'correct_answer_id': correct_answer_id,
     }
@@ -151,7 +159,13 @@ def get_statistic_data(message):
         ).filter(Statictic.user_full_name == user_name).all()
     )
     result_stata = '\n'.join(
-        [f'/{key}:: {value} / {all_questions[key] * 2}'
+        [f'/{key}:: {value} / {all_questions[key] * 3}'
          for key, value in user_stata.items()]
     )
     return result_stata
+
+
+def clear_statistic(message):
+    user_name = f'{message.chat.first_name} {message.chat.last_name}'
+    session.query(Statictic).filter_by(user_full_name=user_name).delete()
+    session.commit()
