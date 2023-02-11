@@ -2,3 +2,5 @@
 /db
 /engine copy.py
 /venv
+
+.env
