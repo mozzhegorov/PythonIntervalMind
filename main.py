@@ -33,7 +33,7 @@ async def send_quiz(chat_id, quiz_data):
     questions_data = quiz_data["question"]
     question_text = f'{questions_data.id}. {questions_data.text} \n' \
                     f' #{questions_data.topic.name}'
-    mediapath = '/home/denis/Projects/RaspberryAdmin/raspberryadmin/mediafiles/'
+    mediapath = '/home/media/'
     photo = open(mediapath + questions_data.picture, 'rb')
     await bot.send_photo(chat_id=chat_id, photo=photo, caption='hahaha')
     my_quiz = await bot.send_poll(
