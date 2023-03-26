@@ -185,8 +185,8 @@ def get_statistic_data(message):
 
 def clear_statistic(message):
     user_name = f'{message.chat.first_name} {message.chat.last_name}'
-
-    session.query(Statistic).join(
-            QuizUser
-        ).filter(QuizUser.user_full_name == user_name).delete()
+    user = session.query(QuizUser).\
+        filter(QuizUser.user_full_name == user_name).\
+        first()
+    session.query(Statistic).filter(Statistic.user_id == user.id).delete()
     session.commit()
