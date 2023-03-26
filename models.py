@@ -13,16 +13,17 @@ class Question(Base):
 
     id = Column(Integer, primary_key=True)
     text = Column(String(256), nullable=False)
+    picture = Column(String(100), nullable=True)
     topic_id = Column(Integer, ForeignKey('topic.id'))
     topic = relationship(
         "Topic",
         back_populates="questions",
-        lazy="select", 
+        lazy="select",
     )
     answers = relationship(
         "Answer",
         back_populates="question",
-        lazy="subquery", 
+        lazy="subquery",
     )
 
     def __repr__(self):
@@ -31,7 +32,7 @@ class Question(Base):
 
     def to_json(self):
         return {item.name: getattr(self, item.name) for item in self.__table__.columns}
-    
+
 
 class Topic(Base):
     __tablename__ = "topic"
@@ -41,12 +42,12 @@ class Topic(Base):
     questions = relationship(
         "Question",
         back_populates="topic",
-        lazy="subquery", 
+        lazy="subquery",
     )
 
     def __repr__(self):
         return f"Topic(id={self.id!r}, name={self.name!r})"
-    
+
 
 class Answer(Base):
     __tablename__ = "answer"
@@ -58,7 +59,7 @@ class Answer(Base):
     question = relationship(
         "Question",
         back_populates="answers",
-        lazy="subquery", 
+        lazy="subquery",
     )
 
     def __repr__(self):
@@ -66,8 +67,8 @@ class Answer(Base):
 
     def to_json(self):
         return {item.name: getattr(self, item.name) for item in self.__table__.columns}
-    
-    
+
+
 class Poll(Base):
     __tablename__ = "poll"
 
@@ -78,26 +79,41 @@ class Poll(Base):
 
     def __repr__(self):
         return f"Poll(id={self.id!r}, question={self.question!r})"
-    
-    
-class Statictic(Base):
+
+
+class Statistic(Base):
     __tablename__ = "statistic"
 
     id = Column(Integer, primary_key=True)
-    user_full_name = Column(String(64), nullable=False)
-    
+    user_id = Column(Integer, ForeignKey('quizuser.id'))
+    user = relationship(
+        "QuizUser",
+        lazy="subquery",
+    )
+
     question_id = Column(Integer, ForeignKey('question.id'))
     question = relationship(
         "Question",
-        lazy="subquery", 
+        lazy="subquery",
     )
     topic_id = Column(Integer, ForeignKey('topic.id'))
     topic = relationship(
         "Topic",
-        lazy="select", 
+        lazy="select",
     )
     correct_cnt = Column(Integer, nullable=False, default=0)
 
     def __repr__(self):
-        return f"user_full_name(id={self.user_full_name!r}, question={self.question!r}), correct_cnt={self.correct_cnt!r})"
-    
+        return f"user_full_name(id={self.user.user_full_name!r}, question={self.question!r}), correct_cnt={self.correct_cnt!r})"
+
+
+class QuizUser(Base):
+    __tablename__ = "quizuser"
+
+    id = Column(Integer, primary_key=True)
+    user_full_name = Column(String(64), nullable=False)
+    statistic = relationship(
+        "Statistic",
+        back_populates="user",
+        lazy="subquery",
+    )
