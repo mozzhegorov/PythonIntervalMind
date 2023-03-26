@@ -103,7 +103,7 @@ async def handle_poll_answer(quiz_answer):
     else:
         data_for_quiz = get_data_question(topic)
     delete_poll(quiz_answer['poll_id'])
-    inline_btn_1 = InlineKeyboardButton(f'Еще вопрос на тему {topic}', callback_data=f'/{topic}')
+    inline_btn_1 = InlineKeyboardButton(f'Еще вопрос на тему {topic}', callback_data=f'{topic}')
     inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
     await bot.send_message(quiz_answer.user.id, str(answer_result), reply_markup=inline_kb1)
 
@@ -182,7 +182,7 @@ async def send_question_callback(message: types.CallbackQuery):
         message['from'].id,
         message['from'].first_name,
         message['from'].last_name,
-        # message.data;l/,
+        message.data,
     )
     await send_question(chat)
 
