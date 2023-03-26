@@ -170,9 +170,11 @@ def get_statistic_data(message):
             func.sum(Statistic.correct_cnt),
         ).join(
             Topic
+        ).join(
+            QuizUser
         ).group_by(
             Topic
-        ).filter(Statistic.user.user_full_name == user_name).all()
+        ).filter(QuizUser.user_full_name == user_name).all()
     )
     result_stata = '\n'.join(
         [f'/{key}:: {value} / {all_questions[key] * 3}'
@@ -183,5 +185,8 @@ def get_statistic_data(message):
 
 def clear_statistic(message):
     user_name = f'{message.chat.first_name} {message.chat.last_name}'
-    session.query(Statistic).filter(Statistic.user.user_full_name == user_name).delete()
+
+    session.query(Statistic).join(
+            QuizUser
+        ).filter(QuizUser.user_full_name == user_name).delete()
     session.commit()
