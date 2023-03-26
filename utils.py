@@ -231,6 +231,7 @@ def get_statistic_string(message: Message) -> str:
         .group_by(Topic)
         .filter(QuizUser.user_full_name == user_name)
         .all()
+
     )
     result_stata = "\n".join(
         [
