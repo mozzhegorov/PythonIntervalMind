@@ -1,9 +1,11 @@
-from typing import Union
+from dataclasses import dataclass
+from typing import Optional, Union
 from models import Topic
 from models import Question
 from models import Answer
 from models import Poll
-from models import Statictic
+from models import Statistic
+from models import QuizUser
 from sqlalchemy.sql.expression import func
 from engine import session
 from random import shuffle
@@ -11,14 +13,23 @@ import csv
 from engine import Base
 from engine import engine
 
+@dataclass
+class ChatData:
+    id: int
+    first_name: str
+    last_name: str
+    data: str
 
-def get_question(topic_text: Union[str, None], user_name: Union[str, None]):
+
+
+
+def get_question(topic_text: Optional[str], user_name: Optional[str]):
     question_query = session.query(Question).join(Topic)
     if topic_text:
         question_query = question_query.filter(Topic.name == topic_text)
-    exclude_questions = session.query(Statictic).filter(
-        Statictic.user_full_name == user_name,
-        Statictic.correct_cnt > 2,
+    exclude_questions = session.query(Statistic).join(QuizUser).filter(
+        QuizUser.user_full_name == user_name,
+        Statistic.correct_cnt > 2,
     ).all()
     exit_questions = [question.question_id for question in exclude_questions]
     question_query = question_query.filter(~Question.id.in_(exit_questions))
@@ -125,14 +136,19 @@ def save_statistic(quiz_answer_data, quiz_anwser):
     ).first()
     answer_result = quiz_answer_data.correct_answer in quiz_anwser['option_ids']
     full_name = f'{quiz_anwser["user"]["first_name"]} {quiz_anwser["user"]["last_name"]}'
-    statistic_item, created = get_or_create(
-        Statictic,
+    user, created = get_or_create(
+        QuizUser,
         user_full_name=full_name,
+    )
+    statistic_item, created = get_or_create(
+        Statistic,
+        user=user,
         question_id=question.id,
         topic_id=question.topic.id,
     )
     statistic_item.correct_cnt += 1 if answer_result else (-1)
     session.commit()
+    return answer_result
 
 
 def get_statistic_data(message):
@@ -151,12 +167,12 @@ def get_statistic_data(message):
     user_stata = dict(
         session.query(
             Topic.name,
-            func.sum(Statictic.correct_cnt),
+            func.sum(Statistic.correct_cnt),
         ).join(
             Topic
         ).group_by(
             Topic
-        ).filter(Statictic.user_full_name == user_name).all()
+        ).filter(Statistic.user_full_name == user_name).all()
     )
     result_stata = '\n'.join(
         [f'/{key}:: {value} / {all_questions[key] * 3}'
@@ -167,5 +183,5 @@ def get_statistic_data(message):
 
 def clear_statistic(message):
     user_name = f'{message.chat.first_name} {message.chat.last_name}'
-    session.query(Statictic).filter_by(user_full_name=user_name).delete()
+    session.query(Statistic).filter_by(user_full_name=user_name).delete()
     session.commit()
