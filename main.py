@@ -41,9 +41,9 @@ async def send_quiz(chat_id, quiz_data):
         f"{questions_data.id}. {questions_data.text} \n"
         f" #{questions_data.topic.name}"
     )
-
-    photo = open(MEDIAPATH + questions_data.picture, "rb")
-    await bot.send_photo(chat_id=chat_id, photo=photo)
+    if questions_data.picture:
+        photo = open(MEDIAPATH + questions_data.picture, "rb")
+        await bot.send_photo(chat_id=chat_id, photo=photo)
     my_quiz = await bot.send_poll(
         chat_id=chat_id,
         question=question_text,
